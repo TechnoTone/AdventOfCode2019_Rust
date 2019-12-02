@@ -23,7 +23,7 @@ fn real_fuel_for(mass: &i32) -> i32 {
 }
 
 #[aoc(day1, part1)]
-pub fn calculate_frequency(input: &[i32]) -> i32 {
+pub fn part1(input: &[i32]) -> i32 {
     return input.iter().map(fuel_for).sum();
 }
 

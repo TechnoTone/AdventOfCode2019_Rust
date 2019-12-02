@@ -8,31 +8,52 @@ pub fn input_generator(input: &str) -> Vec<usize> {
         .collect::<Vec<usize>>()
 }
 
-#[aoc(day2, part1)]
-pub fn run(input_: &[usize]) -> usize {
+fn run(input: &[usize], noun: usize, verb: usize) -> usize {
     let mut ix: usize = 0;
 
-    let mut input = input_.to_vec();
-    // input[1] = 12 as usize;
-    // input[2] = 2 as usize;
+    let mut mem = input.to_vec();
+    mem[1] = noun;
+    mem[2] = verb;
 
-    while ix < input.len() {
-        if input[ix] == 1 {
-            let t = input[ix + 3];
-            input[t] = input[input[ix + 1]] + input[input[ix + 2]];
-        } else if input[ix] == 2 {
-            let t = input[ix + 3];
-            input[t] = input[input[ix + 1]] * input[input[ix + 2]];
-        } else if input[ix] == 99 {
+    while ix < mem.len() {
+        if mem[ix] == 1 {
+            let t = mem[ix + 3];
+            mem[t] = mem[mem[ix + 1]] + mem[mem[ix + 2]];
+        } else if mem[ix] == 2 {
+            let t = mem[ix + 3];
+            mem[t] = mem[mem[ix + 1]] * mem[mem[ix + 2]];
+        } else if mem[ix] == 99 {
             break;
         }
         ix += 4;
     }
 
-    return input[0];
+    return mem[0];
 }
 
-// #[aoc(day2, part2)]
-// pub fn part2(input: &[i32]) -> i32 {
-//     return input.iter().map(real_fuel_for).sum();
-// }
+#[aoc(day2, part1)]
+pub fn part1(input: &[usize]) -> usize {
+    run(input, 12, 2)
+}
+
+#[aoc(day2, part2)]
+pub fn part2(input: &[usize]) -> usize {
+    let mut count: usize = 0;
+    let mut result: usize;
+
+    loop {
+        for noun in 0..count {
+            result = run(input, noun, count);
+            if result == 19690720 {
+                return 100 * noun + count;
+            }
+        }
+        for verb in 0..count {
+            result = run(input, count, verb);
+            if result == 19690720 {
+                return 100 * count + verb;
+            }
+        }
+        count += 1;
+    }
+}
