@@ -84,23 +84,23 @@ fn intersect(left: &Wire, right: &Wire) -> Vec<Pos> {
     common
 }
 
-fn in_order(wire: &Wire) -> Vec<(Pos, u32)> {
-    let mut vec: Vec<(&Pos, &u32)> = wire.iter().collect();
-    vec.sort_by(|a, b| b.1.cmp(a.1));
-    vec.iter().map(|(&k, &v)| (k, v)).collect()
-}
+// fn in_order(wire: &Wire) -> Vec<(Pos, u32)> {
+//     let mut vec: Vec<(&Pos, &u32)> = wire.iter().collect();
+//     vec.sort_by(|a, b| b.1.cmp(a.1));
+//     vec.iter().map(|(&k, &v)| (k, v)).collect()
+// }
 
 #[test]
 pub fn test1() {
     let test1 = parse_wire("R8,U5,L5,D3");
     let test2 = parse_wire("U7,R6,D4,L4");
 
-    println!("{:?}", in_order(&test1));
-    println!("{:?}", in_order(&test2));
+    // println!("{:?}", in_order(&test1));
+    // println!("{:?}", in_order(&test2));
 
     let intersections = intersect(&test1, &test2);
 
-    println!("Intersections: {:?}", intersections);
+    // println!("Intersections: {:?}", intersections);
 
     let result = intersections
         .iter()
@@ -116,12 +116,12 @@ pub fn test2() {
     let test1 = parse_wire("R75,D30,R83,U83,L12,D49,R71,U7,L72");
     let test2 = parse_wire("U62,R66,U55,R34,D71,R55,D58,R83");
 
-    println!("{:?}", test1);
-    println!("{:?}", test2);
+    // println!("{:?}", test1);
+    // println!("{:?}", test2);
 
     let intersections = intersect(&test1, &test2);
 
-    println!("{:?}", intersections);
+    // println!("{:?}", intersections);
 
     let result = intersections
         .iter()
@@ -137,12 +137,12 @@ pub fn test3() {
     let test1 = parse_wire("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51");
     let test2 = parse_wire("U98,R91,D20,R16,D67,R40,U7,R15,U6,R7");
 
-    println!("{:?}", test1);
-    println!("{:?}", test2);
+    // println!("{:?}", test1);
+    // println!("{:?}", test2);
 
     let intersections = intersect(&test1, &test2);
 
-    println!("{:?}", intersections);
+    // println!("{:?}", intersections);
 
     let result = intersections
         .iter()
