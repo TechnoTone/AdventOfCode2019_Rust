@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 
 #[derive(Hash, Eq, PartialEq, Debug, Copy, Clone)]
@@ -6,7 +7,7 @@ pub struct Pos {
     y: i32,
 }
 
-pub type Line = Vec<Pos>;
+pub type Wire = HashMap<Pos, u32>;
 
 #[derive(Eq, PartialEq, Debug, Copy, Clone)]
 pub enum State {
@@ -18,137 +19,75 @@ pub enum State {
     Cross,
 }
 
-fn parse_line(input: &str, start_at: Pos) -> Line {
-    let p = input.split_at(1);
-    let direction = input.chars().next().unwrap();
-    let mut length: u32 = FromStr::from_str(p.1).unwrap();
-
-    let mut line = Line::new();
-    let mut x = start_at.x;
-    let mut y = start_at.y;
-
-    match direction {
-        'U' => {
-            while length > 0 {
-                y += 1;
-                line.push(Pos { x, y });
-                length -= 1;
-            }
-        }
-        'D' => {
-            while length > 0 {
-                y -= 1;
-                line.push(Pos { x, y });
-                length -= 1;
-            }
-        }
-        'L' => {
-            while length > 0 {
-                x -= 1;
-                line.push(Pos { x, y });
-                length -= 1;
-            }
-        }
-        'R' => {
-            while length > 0 {
-                x += 1;
-                line.push(Pos { x, y });
-                length -= 1;
-            }
-        }
-        _ => {}
-    }
-    line
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
-fn parse_wire(input: &str) -> Line {
-    let lines: Vec<&str> = input.split(",").collect();
-    let mut pos = Pos { x: 0, y: 0 };
-    let mut result = Line::new();
+fn to_path(segment: &str) -> String {
+    let d = segment.chars().next().unwrap() as u8;
+    let length: usize = FromStr::from_str(segment.split_at(1).1).unwrap();
+    String::from_utf8(vec![d; length]).unwrap()
+}
 
-    for line in lines {
-        result.extend(parse_line(line, pos));
-        pos = *result.last().unwrap();
+fn to_direction(d: char) -> Direction {
+    match d {
+        'U' => Direction::Up,
+        'D' => Direction::Down,
+        'L' => Direction::Left,
+        _ => Direction::Right,
+    }
+}
+
+fn parse_wire(input: &str) -> Wire {
+    let path: String = input.split(",").map(to_path).collect();
+    let directions: Vec<Direction> = path.chars().map(to_direction).collect();
+
+    let mut x = 0;
+    let mut y = 0;
+    let mut count = 0;
+    let mut result = Wire::new();
+
+    for d in directions {
+        match d {
+            Direction::Up => y += 1,
+            Direction::Down => y -= 1,
+            Direction::Left => x += 1,
+            Direction::Right => x -= 1,
+        }
+        count += 1;
+        result.insert(Pos { x, y }, count);
     }
 
     result
 }
 
-// fn add_to_circuit(state: State, circuit: &mut HashMap<Pos, State>, pos: &mut Pos) {
-//     // println!("{:?}", pos);
-
-//     match (circuit.get(&pos), state) {
-//         (Some(State::Horizontal), State::Vertical) | (Some(State::Vertical), State::Horizontal) => {
-//             circuit.insert(*pos, State::Cross);
-//         }
-//         (_, _) => {
-//             circuit.insert(*pos, state);
-//         }
-//     }
-// }
-
-// fn add_line_to_circuit(line: &Line, circuit: &mut HashMap<Pos, State>, pos: &mut Pos) {
-//     let direction = line.0;
-//     let mut count = line.1;
-//     match direction {
-//         'U' => {
-//             while count > 0 {
-//                 pos.y -= 1;
-//                 add_to_circuit(State::Vertical, circuit, pos);
-//                 count -= 1;
-//             }
-//         }
-//         'D' => {
-//             while count > 0 {
-//                 pos.y += 1;
-//                 add_to_circuit(State::Vertical, circuit, pos);
-//                 count -= 1;
-//             }
-//         }
-//         'L' => {
-//             while count > 0 {
-//                 pos.x -= 1;
-//                 add_to_circuit(State::Horizontal, circuit, pos);
-//                 count -= 1;
-//             }
-//         }
-//         'R' => {
-//             while count > 0 {
-//                 pos.x += 1;
-//                 add_to_circuit(State::Horizontal, circuit, pos);
-//                 count -= 1;
-//             }
-//         }
-//         _ => {}
-//     }
-//     add_to_circuit(State::Corner, circuit, pos);
-// }
-
-// fn add_wire_to_circuit(wire: &Wire, circuit: &mut HashMap<Pos, State>, pos: &mut Pos) {
-//     for line in wire {
-//         add_line_to_circuit(line, circuit, pos);
-//     }
-// }
-
 fn manhattan_distance(pos: Pos) -> i32 {
-    // println!("{:?} {}", pos, pos.x.abs() + pos.y.abs());
     pos.x.abs() + pos.y.abs()
 }
 
-fn timings(pos: &Pos, left: Vec<Pos>, right: Vec<Pos>) -> usize {
-    left.iter().position(|&p| p == *pos).unwrap() + right.iter().position(|&p| p == *pos).unwrap()
+fn timings(pos: &Pos, left: &Wire, right: &Wire) -> u32 {
+    left.get(pos).unwrap() + right.get(pos).unwrap()
 }
 
-fn intersect(left: Vec<Pos>, right: Vec<Pos>) -> Line {
+fn intersect(left: &Wire, right: &Wire) -> Vec<Pos> {
     let mut common = Vec::new();
 
-    for item in left {
-        if right.contains(&item) {
-            common.push(item);
+    for item in left.keys() {
+        if right.contains_key(&item) {
+            common.push(*item);
         }
     }
 
     common
+}
+
+fn in_order(wire: &Wire) -> Vec<(Pos, u32)> {
+    let mut vec: Vec<(&Pos, &u32)> = wire.iter().collect();
+    vec.sort_by(|a, b| b.1.cmp(a.1));
+    vec.iter().map(|(&k, &v)| (k, v)).collect()
 }
 
 #[test]
@@ -156,12 +95,12 @@ pub fn test1() {
     let test1 = parse_wire("R8,U5,L5,D3");
     let test2 = parse_wire("U7,R6,D4,L4");
 
-    println!("{:?}", test1);
-    println!("{:?}", test2);
+    println!("{:?}", in_order(&test1));
+    println!("{:?}", in_order(&test2));
 
-    let intersections = intersect(test1, test2);
+    let intersections = intersect(&test1, &test2);
 
-    println!("{:?}", intersections);
+    println!("Intersections: {:?}", intersections);
 
     let result = intersections
         .iter()
@@ -180,7 +119,7 @@ pub fn test2() {
     println!("{:?}", test1);
     println!("{:?}", test2);
 
-    let intersections = intersect(test1, test2);
+    let intersections = intersect(&test1, &test2);
 
     println!("{:?}", intersections);
 
@@ -201,7 +140,7 @@ pub fn test3() {
     println!("{:?}", test1);
     println!("{:?}", test2);
 
-    let intersections = intersect(test1, test2);
+    let intersections = intersect(&test1, &test2);
 
     println!("{:?}", intersections);
 
@@ -214,13 +153,18 @@ pub fn test3() {
     assert!(result == 135)
 }
 
-#[aoc(day3, part1)]
-pub fn part1<'a>(input: &str) -> i32 {
-    let mut iter = input.lines().map(|l| parse_wire(l));
-    let line1 = iter.next().unwrap().to_vec();
-    let line2 = iter.next().unwrap().to_vec();
+#[aoc_generator(day3)]
+pub fn parse_input(input: &str) -> (Wire, Wire) {
+    let mut lines = input.lines();
+    (
+        parse_wire(lines.next().unwrap()),
+        parse_wire(lines.next().unwrap()),
+    )
+}
 
-    let intersections = intersect(line1, line2);
+#[aoc(day3, part1)]
+pub fn part1<'a>((w1, w2): &(Wire, Wire)) -> i32 {
+    let intersections = intersect(&w1, &w2);
 
     intersections
         .iter()
@@ -230,17 +174,13 @@ pub fn part1<'a>(input: &str) -> i32 {
 }
 
 #[aoc(day3, part2)]
-pub fn part2<'a>(input: &str) -> usize {
-    let mut iter = input.lines().map(|l| parse_wire(l));
-    let line1 = iter.next().unwrap();
-    let line2 = iter.next().unwrap();
-
-    let intersections = intersect(line1, line2);
+pub fn part2<'a>((w1, w2): &(Wire, Wire)) -> u32 {
+    let intersections = intersect(&w1, &w2);
 
     intersections
         .to_vec()
         .iter()
-        .map(|p| timings(p, line1.to_vec(), line2.to_vec()))
+        .map(|p| timings(p, &w1, &w2))
         .min()
         .unwrap()
 }
