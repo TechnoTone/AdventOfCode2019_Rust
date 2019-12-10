@@ -134,7 +134,7 @@ fn get_permutations(v: Vec<u8>) -> Vec<Vec<u8>> {
     }
 }
 
-fn run_amps(program: &[isize], phases: Vec<u8>) -> isize {
+fn run_amps_once(program: &[isize], phases: Vec<u8>) -> isize {
     let mut n: isize = 0;
     for i in phases {
         let prog = &program.to_vec()[..];
@@ -144,13 +144,24 @@ fn run_amps(program: &[isize], phases: Vec<u8>) -> isize {
     n
 }
 
-fn max_signal(program: &[isize]) -> isize {
+// fn run_amps_feedback_loop(program: &[isize], phases: Vec<u8>) -> isize {
+//     let mut n: isize = 0;
+//     let mut amps = Vec::new();
+//     for i in phases {
+//         let prog = &program.to_vec()[..];
+//         n = run(prog, &[i as isize, n]).1;
+//         // println! {"output: {}", n};
+//     }
+//     n
+// }
+
+fn max_signal_single_run(program: &[isize]) -> isize {
     let phases = [0, 1, 2, 3, 4].to_vec();
     let permutations = get_permutations(phases);
 
     let mut max_value = 0;
     for perm in permutations {
-        let value = run_amps(program, perm);
+        let value = run_amps_once(program, perm);
         if value > max_value {
             max_value = value;
         }
@@ -171,16 +182,8 @@ pub fn test2() {
     let program = &[
         3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0,
     ];
-    assert!(run_amps(program, phases) == 43210);
-}
-
-#[test]
-pub fn test2b() {
-    let phases = [4, 3, 2, 1, 0].to_vec();
-    let program = &[
-        3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0,
-    ];
-    assert!(max_signal(program) == 43210);
+    assert!(run_amps_once(program, phases) == 43210);
+    assert!(max_signal_single_run(program) == 43210);
 }
 
 #[test]
@@ -190,7 +193,8 @@ pub fn test3() {
         3, 23, 3, 24, 1002, 24, 10, 24, 1002, 23, -1, 23, 101, 5, 23, 23, 1, 24, 23, 23, 4, 23, 99,
         0, 0,
     ];
-    assert!(run_amps(program, phases) == 54321);
+    assert!(run_amps_once(program, phases) == 54321);
+    assert!(max_signal_single_run(program) == 54321);
 }
 
 #[test]
@@ -200,8 +204,20 @@ pub fn test4() {
         3, 31, 3, 32, 1002, 32, 10, 32, 1001, 31, -2, 31, 1007, 31, 0, 33, 1002, 33, 7, 33, 1, 33,
         31, 31, 1, 32, 31, 31, 4, 31, 99, 0, 0, 0,
     ];
-    assert!(run_amps(program, phases) == 65210);
+    assert!(run_amps_once(program, phases) == 65210);
+    assert!(max_signal_single_run(program) == 65210);
 }
+
+// #[test]
+// pub fn test5() {
+//     let phases = [9, 8, 7, 6, 5].to_vec();
+//     let program = &[
+//         3, 26, 1001, 26, -4, 26, 3, 27, 1002, 27, 2, 27, 1, 27, 26, 27, 4, 27, 1001, 28, -1, 28,
+//         1005, 28, 6, 99, 0, 0, 5,
+//     ];
+//     assert!(run_amps_feedback_loop(program, phases) == 139629729);
+//     // assert!(max_signal_single_run(program) == 65210);
+// }
 
 #[aoc_generator(day7)]
 pub fn input_generator(input: &str) -> Vec<isize> {
@@ -213,7 +229,7 @@ pub fn input_generator(input: &str) -> Vec<isize> {
 
 #[aoc(day7, part1)]
 pub fn part1(input: &[isize]) -> isize {
-    max_signal(input)
+    max_signal_single_run(input)
 }
 
 // #[aoc(day6, part2)]
