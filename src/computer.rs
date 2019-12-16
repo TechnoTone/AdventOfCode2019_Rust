@@ -2,10 +2,7 @@
 pub struct Computer {
     pub memory: Vec<i32>,
     ix: usize,
-    // param_modes: ParamModes,
     inputs: Vec<i32>,
-    pub output: i32,
-    state: State,
 }
 
 #[derive(Debug)]
@@ -51,20 +48,21 @@ impl Computer {
         Self {
             memory,
             ix: 0,
-            // param_modes: ParamModes::new(0),
             inputs: Vec::new(),
-            output: 0,
-            state: State::Idle,
         }
     }
 
     pub fn add_input(&mut self, input: i32) {
+        // println!("add_input({})", input);
         self.inputs.push(input);
     }
 
     fn read_next(&mut self) -> i32 {
-        self.ix += 1;
-        self.memory[self.ix - 1]
+        let mem = self.memory[self.ix];
+        if (self.ix < self.memory.len() - 1) {
+            self.ix += 1;
+        }
+        return mem;
     }
 
     fn read_next_op(&mut self) -> Operation {
@@ -125,14 +123,6 @@ impl Computer {
     }
 
     pub fn run(&mut self) -> State {
-        match self.state {
-            State::Complete => State::Complete,
-            _ => self.run_program(),
-        }
-    }
-
-    fn run_program(&mut self) -> State {
-        self.state = State::Running;
         loop {
             let next_op = self.read_next_op();
             // println!("{:?}", next_op);
@@ -142,13 +132,14 @@ impl Computer {
                 Operation::Input(t) => {
                     if self.inputs.is_empty() {
                         self.ix -= 2;
-                        self.state = State::AwaitingInput;
                         return State::AwaitingInput;
                     } else {
                         self.memory[t] = self.inputs.remove(0);
                     }
                 }
-                Operation::Output(a) => self.output = a,
+                Operation::Output(a) => {
+                    return State::Output(a);
+                }
                 Operation::JumpTrue(a, i) => {
                     if a != 0 {
                         self.ix = i;
@@ -174,7 +165,6 @@ impl Computer {
                     }
                 }
                 Operation::Exit => {
-                    self.state = State::Complete;
                     return State::Complete;
                 }
             }
@@ -185,7 +175,7 @@ impl Computer {
 #[derive(Debug)]
 pub enum State {
     Idle,
-    Running,
     AwaitingInput,
+    Output(i32),
     Complete,
 }

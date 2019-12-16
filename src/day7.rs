@@ -1,130 +1,15 @@
+use crate::computer::Computer;
+use crate::computer::State;
 use std::str::FromStr;
 
-fn p_addr(mem: &Vec<isize>, index: usize, offset: usize, p_modes: [bool; 4]) -> usize {
-    // println!("p_addr: index:{}, offset:{}", index, offset);
-    if p_modes[(offset)] {
-        // println!("val={}", index + offset);
-        return index + offset;
-    } else {
-        // println!("ref={}", mem[index + offset]);
-        return mem[index + offset] as usize;
-    }
-}
-
-fn p_read(mem: &Vec<isize>, index: usize, offset: usize, p_modes: [bool; 4]) -> isize {
-    // println!("p_read: index:{}, offset:{}", index, offset);
-    mem[p_addr(mem, index, offset, p_modes)]
-}
-
-fn read_p_modes(mem: usize) -> [bool; 4] {
-    [false, mem % 10 > 0, mem / 10 % 10 > 0, mem / 100 % 10 > 0]
-}
-
-pub fn run(init: &[isize], inputs: &[isize]) -> (Vec<isize>, isize) {
-    let mut mem = init.to_vec();
-    let mut output: isize = 0;
-    let mut ix: usize = 0;
-    let mut input = inputs.iter();
-
-    // println!("Run: {:?}", inputs);
-
-    loop {
-        // println!("ix:{}, mem:{:?}", ix, mem);
-        let op = mem[ix] % 100;
-        let p_modes = read_p_modes(mem[ix] as usize / 100);
-        // println!("op:{}, p_modes:{:?}", op, p_modes);
-
-        match op {
-            1 => {
-                let a = p_read(&mem, ix, 1, p_modes);
-                let b = p_read(&mem, ix, 2, p_modes);
-                let t = p_addr(&mem, ix, 3, p_modes);
-                // println!("Sum: {} + {} => {}", a, b, t);
-                mem[t] = a + b;
-                ix += 4;
-            }
-            2 => {
-                let a = p_read(&mem, ix, 1, p_modes);
-                let b = p_read(&mem, ix, 2, p_modes);
-                let t = p_addr(&mem, ix, 3, p_modes);
-                // println!("Multiply: {} * {} => {}", a, b, t);
-                mem[t] = a * b;
-                ix += 4;
-            }
-            3 => {
-                let t = p_addr(&mem, ix, 1, p_modes);
-                // println!("Input: {} => {}", input, t);
-                mem[t] = *input.next().unwrap();
-                ix += 2;
-            }
-            4 => {
-                let t = p_read(&mem, ix, 1, p_modes);
-                // println!("Output: {}", t);
-                output = t;
-                ix += 2;
-            }
-            5 => {
-                let a = p_read(&mem, ix, 1, p_modes);
-                let b = p_read(&mem, ix, 2, p_modes);
-                // println!("jump-if-true: {}, {}", a, b);
-                if a != 0 {
-                    ix = b as usize;
-                } else {
-                    ix += 3;
-                }
-            }
-            6 => {
-                let a = p_read(&mem, ix, 1, p_modes);
-                let b = p_read(&mem, ix, 2, p_modes);
-                // println!("jump-if-false: {}, {}", a, b);
-                if a == 0 {
-                    ix = b as usize;
-                } else {
-                    ix += 3;
-                }
-            }
-            7 => {
-                let a = p_read(&mem, ix, 1, p_modes);
-                let b = p_read(&mem, ix, 2, p_modes);
-                let t = p_addr(&mem, ix, 3, p_modes);
-                // println!("less than: {} < {} => {}", a, b, t);
-                if a < b {
-                    mem[t] = 1;
-                } else {
-                    mem[t] = 0;
-                }
-                ix += 4;
-            }
-            8 => {
-                let a = p_read(&mem, ix, 1, p_modes);
-                let b = p_read(&mem, ix, 2, p_modes);
-                let t = p_addr(&mem, ix, 3, p_modes);
-                // println!("equals: {} == {} => {}", a, b, t);
-                if a == b {
-                    mem[t] = 1;
-                } else {
-                    mem[t] = 0;
-                }
-                ix += 4;
-            }
-            _ => {
-                break;
-            }
-        }
-    }
-
-    // println!("{:?}", mem);
-    return (mem, output);
-}
-
-fn get_permutations(v: Vec<u8>) -> Vec<Vec<u8>> {
+fn get_permutations(v: Vec<i32>) -> Vec<Vec<i32>> {
     match v.as_slice() {
         [] | [_] => [v].to_vec(),
         [x, y] => [[*x, *y].to_vec(), [*y, *x].to_vec()].to_vec(),
         _ => {
-            let mut result: Vec<Vec<u8>> = Vec::new();
+            let mut result: Vec<Vec<i32>> = Vec::new();
             for i in v.to_vec() {
-                let others: Vec<u8> = v.to_vec().into_iter().filter(|&x| x != i).collect();
+                let others: Vec<i32> = v.to_vec().into_iter().filter(|&x| x != i).collect();
                 for perm in get_permutations(others) {
                     result.push([[i].to_vec(), perm].concat());
                 }
@@ -134,28 +19,21 @@ fn get_permutations(v: Vec<u8>) -> Vec<Vec<u8>> {
     }
 }
 
-fn run_amps_once(program: &[isize], phases: Vec<u8>) -> isize {
-    let mut n: isize = 0;
+fn run_amps_once(program: &[i32], phases: Vec<i32>) -> i32 {
+    let mut n: i32 = 0;
     for i in phases {
-        let prog = &program.to_vec()[..];
-        n = run(prog, &[i as isize, n]).1;
-        // println! {"output: {}", n};
+        let mut computer = Computer::new(program.to_vec());
+        computer.add_input(i);
+        computer.add_input(n);
+        match computer.run() {
+            State::Output(output) => n = output,
+            _ => {}
+        }
     }
     n
 }
 
-// fn run_amps_feedback_loop(program: &[isize], phases: Vec<u8>) -> isize {
-//     let mut n: isize = 0;
-//     let mut amps = Vec::new();
-//     for i in phases {
-//         let prog = &program.to_vec()[..];
-//         n = run(prog, &[i as isize, n]).1;
-//         // println! {"output: {}", n};
-//     }
-//     n
-// }
-
-fn max_signal_single_run(program: &[isize]) -> isize {
+fn max_signal_single_run(program: &[i32]) -> i32 {
     let phases = [0, 1, 2, 3, 4].to_vec();
     let permutations = get_permutations(phases);
 
@@ -169,8 +47,55 @@ fn max_signal_single_run(program: &[isize]) -> isize {
     max_value
 }
 
+fn run_amps_feedback_loop(program: &[i32], phases: Vec<i32>) -> i32 {
+    let amp = || Computer::new(program.to_owned());
+    let mut amps = Vec::new();
+
+    for i in 0..5 {
+        amps.push(Computer::new(program.to_owned()));
+        amps[i].add_input(phases[i]);
+        amps[i].run();
+    }
+
+    let mut i: usize = 0;
+    let mut v: i32 = 0;
+    let mut complete = false;
+
+    loop {
+        for i in 0..5 {
+            // println!("Amp: {}: {}", i, v);
+            amps[i].add_input(v);
+            match amps[i].run() {
+                State::Output(output) => v = output,
+                State::Complete => complete = true,
+                _ => {}
+            }
+        }
+
+        // println!("Loop result: {}", v);
+
+        if complete {
+            return v;
+        }
+    }
+}
+
+fn max_signal_feedback_loop(program: &[i32]) -> i32 {
+    let phases = [5, 6, 7, 8, 9].to_vec();
+    let permutations = get_permutations(phases);
+
+    let mut max_value = 0;
+    for perm in permutations {
+        let value = run_amps_feedback_loop(program, perm.to_owned());
+        if value > max_value {
+            max_value = value;
+        }
+    }
+    max_value
+}
+
 #[test]
-pub fn test1() {
+pub fn permutations() {
     let phases = [0, 1, 2, 3, 4].to_vec();
     let permutations = get_permutations(phases);
     assert_eq!(permutations.len(), 120);
@@ -208,19 +133,31 @@ pub fn test4() {
     assert!(max_signal_single_run(program) == 65210);
 }
 
-// #[test]
-// pub fn test5() {
-//     let phases = [9, 8, 7, 6, 5].to_vec();
-//     let program = &[
-//         3, 26, 1001, 26, -4, 26, 3, 27, 1002, 27, 2, 27, 1, 27, 26, 27, 4, 27, 1001, 28, -1, 28,
-//         1005, 28, 6, 99, 0, 0, 5,
-//     ];
-//     assert!(run_amps_feedback_loop(program, phases) == 139629729);
-//     // assert!(max_signal_single_run(program) == 65210);
-// }
+#[test]
+pub fn test5() {
+    let phases = [9, 8, 7, 6, 5].to_vec();
+    let program = &[
+        3, 26, 1001, 26, -4, 26, 3, 27, 1002, 27, 2, 27, 1, 27, 26, 27, 4, 27, 1001, 28, -1, 28,
+        1005, 28, 6, 99, 0, 0, 5,
+    ];
+    assert!(run_amps_feedback_loop(program, phases) == 139629729);
+    assert!(max_signal_feedback_loop(program) == 139629729);
+}
+
+#[test]
+pub fn test6() {
+    let phases = [9, 7, 8, 5, 6].to_vec();
+    let program = &[
+        3, 52, 1001, 52, -5, 52, 3, 53, 1, 52, 56, 54, 1007, 54, 5, 55, 1005, 55, 26, 1001, 54, -5,
+        54, 1105, 1, 12, 1, 53, 54, 53, 1008, 54, 0, 55, 1001, 55, 1, 55, 2, 53, 55, 53, 4, 53,
+        1001, 56, -1, 56, 1005, 56, 6, 99, 0, 0, 0, 0, 10,
+    ];
+    assert!(run_amps_feedback_loop(program, phases) == 18216);
+    assert!(max_signal_feedback_loop(program) == 18216);
+}
 
 #[aoc_generator(day7)]
-pub fn input_generator(input: &str) -> Vec<isize> {
+pub fn input_generator(input: &str) -> Vec<i32> {
     input
         .split(",")
         .map(|l| FromStr::from_str(l).unwrap())
@@ -228,11 +165,11 @@ pub fn input_generator(input: &str) -> Vec<isize> {
 }
 
 #[aoc(day7, part1)]
-pub fn part1(input: &[isize]) -> isize {
+pub fn part1(input: &[i32]) -> i32 {
     max_signal_single_run(input)
 }
 
-// #[aoc(day6, part2)]
-// pub fn part2<'a>(input: &str) -> usize {
-//     count_transfers(&parse_orbits_2(input), "YOU", "SAN")
-// }
+#[aoc(day7, part2)]
+pub fn part2(input: &[i32]) -> i32 {
+    max_signal_feedback_loop(input)
+}

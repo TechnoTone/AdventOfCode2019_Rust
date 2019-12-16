@@ -1,17 +1,30 @@
 use crate::computer::Computer;
+use crate::computer::State;
 use std::str::FromStr;
+
+fn immediate_test(before: &[i32], after: &[i32]) {
+    let mut computer = Computer::new(before.to_vec());
+    computer.run();
+    assert!(
+        computer.memory == after,
+        "memory didn't reach expected final state"
+    );
+}
 
 fn run_test(before: &[i32], input: i32, output: i32) {
     let mut computer = Computer::new(before.to_vec());
     computer.add_input(input);
-    computer.run();
+    let result = computer.run();
     println!("{:?}", computer);
-    assert!(computer.output == output);
+    match result {
+        State::Output(output) => assert!(output == output),
+        _ => assert!(false, "No output!"),
+    }
 }
 
 #[test]
-pub fn simple_multiplication() {
-    run_test(&[1002, 4, 3, 4, 33], 0, 0);
+pub fn param_mode_test() {
+    immediate_test(&[1002, 4, 3, 4, 33], &[1002, 4, 3, 4, 99]);
 }
 
 #[test]
@@ -80,14 +93,18 @@ pub fn input_generator(input: &str) -> Vec<i32> {
 pub fn part1(input: &[i32]) -> i32 {
     let mut computer = Computer::new(input.to_vec());
     computer.add_input(1);
-    computer.run();
-    computer.output
+    match computer.run() {
+        State::Output(output) => output,
+        _ => 0,
+    }
 }
 
 #[aoc(day5, part2)]
 pub fn part2(input: &[i32]) -> i32 {
     let mut computer = Computer::new(input.to_vec());
     computer.add_input(5);
-    computer.run();
-    computer.output
+    match computer.run() {
+        State::Output(output) => output,
+        _ => 0,
+    }
 }
