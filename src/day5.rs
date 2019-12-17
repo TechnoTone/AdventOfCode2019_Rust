@@ -2,8 +2,8 @@ use crate::computer::Computer;
 use crate::computer::State;
 use std::str::FromStr;
 
-fn immediate_test(before: &[i32], after: &[i32]) {
-    let mut computer = Computer::new(before.to_vec());
+fn immediate_test(before: &[i64], after: &[i64]) {
+    let mut computer = Computer::new(before.to_owned());
     computer.run();
     assert!(
         computer.memory == after,
@@ -11,13 +11,13 @@ fn immediate_test(before: &[i32], after: &[i32]) {
     );
 }
 
-fn run_test(before: &[i32], input: i32, output: i32) {
-    let mut computer = Computer::new(before.to_vec());
+fn run_test(before: &[i64], input: i64, output: i64) {
+    let mut computer = Computer::new(before.to_owned());
     computer.add_input(input);
     let result = computer.run();
     println!("{:?}", computer);
     match result {
-        State::Output(output) => assert!(output == output),
+        State::Output(out) => assert!(out == output),
         _ => assert!(false, "No output!"),
     }
 }
@@ -82,16 +82,16 @@ pub fn test8() {
 }
 
 #[aoc_generator(day5)]
-pub fn input_generator(input: &str) -> Vec<i32> {
+pub fn input_generator(input: &str) -> Vec<i64> {
     input
         .split(",")
         .map(|l| FromStr::from_str(l).unwrap())
-        .collect::<Vec<i32>>()
+        .collect::<Vec<i64>>()
 }
 
 #[aoc(day5, part1)]
-pub fn part1(input: &[i32]) -> i32 {
-    let mut computer = Computer::new(input.to_vec());
+pub fn part1(input: &[i64]) -> i64 {
+    let mut computer = Computer::new(input.to_owned());
     computer.add_input(1);
     match computer.run() {
         State::Output(output) => output,
@@ -100,8 +100,8 @@ pub fn part1(input: &[i32]) -> i32 {
 }
 
 #[aoc(day5, part2)]
-pub fn part2(input: &[i32]) -> i32 {
-    let mut computer = Computer::new(input.to_vec());
+pub fn part2(input: &[i64]) -> i64 {
+    let mut computer = Computer::new(input.to_owned());
     computer.add_input(5);
     match computer.run() {
         State::Output(output) => output,

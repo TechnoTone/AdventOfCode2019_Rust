@@ -2,14 +2,14 @@ use crate::computer::Computer;
 use crate::computer::State;
 use std::str::FromStr;
 
-fn get_permutations(v: Vec<i32>) -> Vec<Vec<i32>> {
+fn get_permutations(v: Vec<i64>) -> Vec<Vec<i64>> {
     match v.as_slice() {
         [] | [_] => [v].to_vec(),
         [x, y] => [[*x, *y].to_vec(), [*y, *x].to_vec()].to_vec(),
         _ => {
-            let mut result: Vec<Vec<i32>> = Vec::new();
-            for i in v.to_vec() {
-                let others: Vec<i32> = v.to_vec().into_iter().filter(|&x| x != i).collect();
+            let mut result: Vec<Vec<i64>> = Vec::new();
+            for i in v.to_owned() {
+                let others: Vec<i64> = v.to_owned().into_iter().filter(|&x| x != i).collect();
                 for perm in get_permutations(others) {
                     result.push([[i].to_vec(), perm].concat());
                 }
@@ -19,10 +19,10 @@ fn get_permutations(v: Vec<i32>) -> Vec<Vec<i32>> {
     }
 }
 
-fn run_amps_once(program: &[i32], phases: Vec<i32>) -> i32 {
-    let mut n: i32 = 0;
+fn run_amps_once(program: &[i64], phases: Vec<i64>) -> i64 {
+    let mut n: i64 = 0;
     for i in phases {
-        let mut computer = Computer::new(program.to_vec());
+        let mut computer = Computer::new(program.to_owned());
         computer.add_input(i);
         computer.add_input(n);
         match computer.run() {
@@ -33,7 +33,7 @@ fn run_amps_once(program: &[i32], phases: Vec<i32>) -> i32 {
     n
 }
 
-fn max_signal_single_run(program: &[i32]) -> i32 {
+fn max_signal_single_run(program: &[i64]) -> i64 {
     let phases = [0, 1, 2, 3, 4].to_vec();
     let permutations = get_permutations(phases);
 
@@ -47,7 +47,7 @@ fn max_signal_single_run(program: &[i32]) -> i32 {
     max_value
 }
 
-fn run_amps_feedback_loop(program: &[i32], phases: Vec<i32>) -> i32 {
+fn run_amps_feedback_loop(program: &[i64], phases: Vec<i64>) -> i64 {
     let amp = || Computer::new(program.to_owned());
     let mut amps = Vec::new();
 
@@ -58,7 +58,7 @@ fn run_amps_feedback_loop(program: &[i32], phases: Vec<i32>) -> i32 {
     }
 
     let mut i: usize = 0;
-    let mut v: i32 = 0;
+    let mut v: i64 = 0;
     let mut complete = false;
 
     loop {
@@ -80,7 +80,7 @@ fn run_amps_feedback_loop(program: &[i32], phases: Vec<i32>) -> i32 {
     }
 }
 
-fn max_signal_feedback_loop(program: &[i32]) -> i32 {
+fn max_signal_feedback_loop(program: &[i64]) -> i64 {
     let phases = [5, 6, 7, 8, 9].to_vec();
     let permutations = get_permutations(phases);
 
@@ -157,7 +157,7 @@ pub fn test6() {
 }
 
 #[aoc_generator(day7)]
-pub fn input_generator(input: &str) -> Vec<i32> {
+pub fn input_generator(input: &str) -> Vec<i64> {
     input
         .split(",")
         .map(|l| FromStr::from_str(l).unwrap())
@@ -165,11 +165,11 @@ pub fn input_generator(input: &str) -> Vec<i32> {
 }
 
 #[aoc(day7, part1)]
-pub fn part1(input: &[i32]) -> i32 {
+pub fn part1(input: &[i64]) -> i64 {
     max_signal_single_run(input)
 }
 
 #[aoc(day7, part2)]
-pub fn part2(input: &[i32]) -> i32 {
+pub fn part2(input: &[i64]) -> i64 {
     max_signal_feedback_loop(input)
 }

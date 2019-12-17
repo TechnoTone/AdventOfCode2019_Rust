@@ -1,8 +1,8 @@
 use crate::computer::Computer;
 use std::str::FromStr;
 
-fn run_test(before: &[i32], after: &[i32]) {
-    let mut computer = Computer::new(before.to_vec());
+fn run_test(before: &[i64], after: &[i64]) {
+    let mut computer = Computer::new(before.to_owned());
     computer.run();
     assert!(
         computer.memory == after,
@@ -42,15 +42,15 @@ pub fn add_then_multiply_self_modification() {
 }
 
 #[aoc_generator(day2)]
-pub fn input_generator(input: &str) -> Vec<i32> {
+pub fn input_generator(input: &str) -> Vec<i64> {
     input
         .split(",")
         .map(|l| FromStr::from_str(l).unwrap())
-        .collect::<Vec<i32>>()
+        .collect::<Vec<i64>>()
 }
 
 #[aoc(day2, part1)]
-pub fn part1(input: &[i32]) -> i32 {
+pub fn part1(input: &[i64]) -> i64 {
     let mut program = input.to_vec();
     program[1] = 12;
     program[2] = 2;
@@ -60,15 +60,15 @@ pub fn part1(input: &[i32]) -> i32 {
 }
 
 #[aoc(day2, part2)]
-pub fn part2(input: &[i32]) -> usize {
+pub fn part2(input: &[i64]) -> usize {
     let mut count: usize = 0;
-    let mut result: i32;
+    let mut result: i64;
 
     loop {
         for noun in 0..count {
             let mut program = input.to_vec();
-            program[1] = noun as i32;
-            program[2] = count as i32;
+            program[1] = noun as i64;
+            program[2] = count as i64;
             let mut computer = Computer::new(program);
             computer.run();
             if (computer.memory)[0] == 19690720 {
@@ -77,8 +77,8 @@ pub fn part2(input: &[i32]) -> usize {
         }
         for verb in 0..count {
             let mut program = input.to_vec();
-            program[1] = count as i32;
-            program[2] = verb as i32;
+            program[1] = count as i64;
+            program[2] = verb as i64;
             let mut computer = Computer::new(program);
             computer.run();
             if (computer.memory)[0] == 19690720 {
